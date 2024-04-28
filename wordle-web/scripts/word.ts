@@ -89,25 +89,12 @@ export class Word {
 
 public isCompatibleWith(otherWordString: string): boolean {
   const otherWord = new Word({ word: otherWordString });
-  const otherLetters = otherWord.letters.map(l => l.char);
+  
+  // Gather all letters marked as 'Wrong' from the current guess.
+  const wrongLetters = new Set(this.letters.filter(l => l.state === LetterState.Wrong).map(l => l.char));
 
-  return this.letters.every((letter, i) => {
-    if (!letter.char) return true; // skip empty letters
-
-    const isCorrectPosition = letter.char === otherWord.letters[i].char;
-    const isInWord = otherLetters.includes(letter.char);
-
-    switch (letter.state) {
-      case LetterState.Correct:
-        return isCorrectPosition;
-      case LetterState.Misplaced:
-        return isInWord && !isCorrectPosition;
-      case LetterState.Wrong:
-        return !isInWord;
-      default:
-        return true;
-    }
-  });
+  // Check the other word to ensure it does not contain any of the 'Wrong' letters.
+  return !otherWord.letters.some(letter => wrongLetters.has(letter.char));
 }
 
 
