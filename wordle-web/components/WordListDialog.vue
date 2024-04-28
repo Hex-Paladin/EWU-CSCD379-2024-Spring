@@ -17,29 +17,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useGame } from '../scripts/game';
 import { LetterState } from '../scripts/letter';
 
-const { validWords, currentGuess } = useGame();
+const { validWords, addGuess, currentGuess } = useGame();
 const dialog = ref(false);
+const emit = defineEmits(['word-selected']);
 
 // Compute letters ruled out based on the state
 const lettersRuledOut = computed(() => {
-  if (!currentGuess.value || !Array.isArray(currentGuess.value)) {
-    return [];
-  }
-  return currentGuess.value.reduce((ruledOut, letter) => {
-    if (letter && letter.state === LetterState.Wrong) {
+  return currentGuess.value?.reduce((ruledOut, letter) => {
+    if (letter.state === LetterState.Wrong) {
       ruledOut.push(letter.char);
     }
     return ruledOut;
-  }, []);
+  }, []) || [];
 });
 
 function isWordCompatible(word) {
-  if (!currentGuess.value || !Array.isArray(currentGuess.value) || currentGuess.value.length === 0) {
-    return true; // If there's no guess or it's not properly formed, assume all words are initially valid
+  if (!currentGuess.value || currentGuess.value.every(letter => !letter || letter.state === LetterState.Unknown)) {
+    return true; // If there's no valid guess, assume all words are initially valid
   }
 
   // Verify that the word does not contain any letters that have been ruled out
@@ -59,29 +57,20 @@ function isWordCompatible(word) {
 }
 
 const filteredWords = computed(() => {
-  // Ensure validWords is properly formatted and available
-  if (!validWords.value || !Array.isArray(validWords.value)) {
-    return []; // Return an empty array if validWords is not correctly initialized
+  if (!validWords.value) {
+    return []; // Return an empty array if validWords is not defined
   }
 
-  // Check if a valid guess has been made
-  // We assume no valid guess if currentGuess.value is empty or all entries are null or Unknown
-  const noValidGuessMade = !currentGuess.value || 
-                           currentGuess.value.length === 0 || 
-                           currentGuess.value.every(letter => letter === null || letter.state === LetterState.Unknown);
-
-  // Return all valid words if no guess has been made or the current guess does not affect the words
-  if (noValidGuessMade) {
-    return validWords.value;
+  // Filter words only if there's a guess and it's not all unknown
+  if (!currentGuess.value || currentGuess.value.every(letter => !letter || letter.state === LetterState.Unknown)) {
+    return validWords.value; // Return all words if no valid guess has been made
   }
 
-  // Otherwise, filter words based on the guess
   return validWords.value.filter(word =>
     word.length === currentGuess.value.length &&
     isWordCompatible(word)
   );
 });
-
 
 const validWordCount = computed(() => filteredWords.value.length);
 
@@ -91,12 +80,7 @@ function selectWord(word) {
   emit('word-selected', word);
   dialog.value = false;
 }
-
-watch([currentGuess, validWords], () => {
-  // Reactively update filtered words when changes occur
-}, { deep: true });
 </script>
-
 
 <style scoped>
 .word-list-dialog {
