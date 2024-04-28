@@ -89,10 +89,13 @@ export class Game {
   }
 
 public addGuess(word: string): void {
+  if (this.gameState !== GameState.Playing) return;
+  // Clear the current guess before adding the new letters
   this.currentGuess.clear();
-    if (this.gameState === GameState.Playing && word.length === this.secretWord.length) {
-    // Fill the current guess with the new word
-    this.currentGuess.fill(word.toUpperCase());
+  if (word.length === this.secretWord.length) {
+    for (const char of word) {
+      this.addLetter(char.toUpperCase());
+    }
   }
 }
 
