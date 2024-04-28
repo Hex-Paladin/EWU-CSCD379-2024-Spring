@@ -17,33 +17,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useGame } from '../scripts/game';
+import { LetterState } from '../scripts/letter';
 
-const emit = defineEmits(['word-selected']);
+const { validWords, currentGuess } = useGame();
 const dialog = ref(false);
 
-const { validWords, addGuess, currentGuess } = useGame();
+// Compute letters ruled out based on the state
+const lettersRuledOut = computed(() => {
+  return currentGuess.value.reduce((ruledOut, letter) => {
+    if (letter.state === LetterState.Wrong) {
+      ruledOut.push(letter.char);
+    }
+    return ruledOut;
+  }, []);
+});
 
 function isWordCompatible(word) {
-  // Assuming lettersRuledOut is defined somewhere in your script or should be passed/imported
-  const lettersRuledOut = []; // Define or import this according to your application logic
-
-  if (!currentGuess.value || !currentGuess.value.letters) {
-    return true; // If no guess is made yet, consider all words as compatible
+  if (!currentGuess.value || !currentGuess.value.length) {
+    return true; // If there's no guess, assume all words are initially valid
   }
 
-  for (let i = 0; i < currentGuess.value.letters.length; i++) {
-    if (currentGuess.value.letters[i] !== null && currentGuess.value.letters[i] !== word[i]) {
-      return false; // Letter at position i does not match the guess
+  // Verify that the word does not contain any letters that have been ruled out
+  if (word.split('').some(letter => lettersRuledOut.value.includes(letter))) {
+    return false;
+  }
+
+  // Ensure the word matches the known correct positions
+  for (let i = 0; i < currentGuess.value.length; i++) {
+    const guess = currentGuess.value[i];
+    if (guess.state === LetterState.Correct && guess.char !== word[i]) {
+      return false;
     }
   }
 
-  if (word.split('').some(letter => lettersRuledOut.includes(letter))) {
-    return false; // Word contains a letter that has been ruled out
-  }
-
-  return true; // The word is compatible with the current guess and ruled out letters
+  return true;
 }
 
 const filteredWords = computed(() => {
