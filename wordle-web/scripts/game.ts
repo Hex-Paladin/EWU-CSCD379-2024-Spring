@@ -46,86 +46,65 @@ export class Game {
       this.currentGuess.addLetter(letter);
       let existingLetterIndex = this.guessedLetters.findIndex(l => l.char.toUpperCase() === letter.toUpperCase());
       if (existingLetterIndex !== -1) {
-        // Update the letter state reactively
-        this.guessedLetters[existingLetterIndex] = new Letter(letter, LetterState.Unknown);
+        this.guessedLetters[existingLetterIndex].state = LetterState.Unknown;
       } else {
         this.guessedLetters.push(new Letter(letter, LetterState.Unknown));
       }
+      this.guessedLetters = [...this.guessedLetters]; // Ensure reactive update
     }
   }
 
-public submitGuess(): void {
-  if (this.gameState !== GameState.Playing || !this.currentGuess.isFilled || !this.currentGuess.isValidWord()) {
-    return;
+  public submitGuess(): void {
+    if (this.gameState !== GameState.Playing || !this.currentGuess.isFilled || !this.currentGuess.isValidWord()) {
+      return;
+    }
+
+    const isCorrect = this.currentGuess.compare(this.secretWord);
+    this.updateGuessedLetters();
+
+    if (isCorrect) {
+      this.gameState = GameState.Won;
+    } else if (this.guessIndex >= this.maxAttempts - 1) {
+      this.gameState = GameState.Lost;
+    } else {
+      this.guessIndex++;
+    }
   }
 
-  const isCorrect = this.currentGuess.compare(this.secretWord);
-  this.updateGuessedLetters();
-
-  if (isCorrect) {
-    this.gameState = GameState.Won;
-  } else if (this.guessIndex >= this.maxAttempts - 1) {
-    this.gameState = GameState.Lost;
-  } else {
-    this.guessIndex++;
-  }
-  this.guessedLetters = [...this.guessedLetters];
-}
-
-public validWords(): string[] {
-  console.log("Recalculating valid words...");
-  return WordList.filter((word) => {
-    word = word.toLowerCase();
-
-    // Check each guess
-    return this.guesses.every((guess) => {
-      let isWordValid = true;
-
-      // Check each letter in the guess
-      guess.letters.forEach((guessedLetter, index) => {
-        const guessedChar = guessedLetter.char.toLowerCase();
-        const actualChar = word[index];
-
-        // Letter marked as 'Correct' must be in the exact position
-        if (guessedLetter.state === LetterState.Correct) {
-          if (actualChar !== guessedChar) {
+  public validWords(): string[] {
+    console.log("Recalculating valid words...");
+    return WordList.filter((word) => {
+      word = word.toLowerCase();
+      return this.guesses.every((guess) => {
+        let isWordValid = true;
+        guess.letters.forEach((guessedLetter, index) => {
+          const guessedChar = guessedLetter.char.toLowerCase();
+          const actualChar = word[index];
+          if (guessedLetter.state === LetterState.Correct && actualChar !== guessedChar) {
+            isWordValid = false;
+          } else if (guessedLetter.state === LetterState.Misplaced && (!word.includes(guessedChar) || actualChar === guessedChar)) {
+            isWordValid = false;
+          } else if (guessedLetter.state === LetterState.Wrong && word.includes(guessedChar)) {
             isWordValid = false;
           }
-        } 
-        // Letter marked as 'Misplaced' must be in the word, but not in the guessed position
-        else if (guessedLetter.state === LetterState.Misplaced) {
-          if (!word.includes(guessedChar) || actualChar === guessedChar) {
-            isWordValid = false;
-          }
-        }
-        // Letter marked as 'Wrong' should not appear anywhere in the word
-        else if (guessedLetter.state === LetterState.Wrong) {
-          if (word.includes(guessedChar)) {
-            isWordValid = false;
-          }
-        }
+        });
+        return isWordValid;
       });
-
-      return isWordValid;
     });
-  });
-}
+  }
 
   public addGuess(word: string): void {
     if (this.gameState !== GameState.Playing) return;
-
     this.currentGuess.fill(word.toUpperCase());
     this.submitGuess();
-    this.guesses = [...this.guesses]; // ensure reactivity
+    this.guesses = [...this.guesses]; // Ensure reactivity
   }
 
   public updateGuessedLetters(): void {
     this.currentGuess.letters.forEach((letter) => {
       const existingLetterIndex = this.guessedLetters.findIndex(l => l.char === letter.char);
       if (existingLetterIndex !== -1) {
-        // Update the letter state reactively
-        const existingLetter = this.guessedLetters[existingLetterIndex];
-        if (letter.state > existingLetter.state) {
+        if (letter.state > this.guessedLetters[existingLetterIndex].state) {
           this.guessedLetters[existingLetterIndex] = new Letter(letter.char, letter.state);
         }
       } else {
