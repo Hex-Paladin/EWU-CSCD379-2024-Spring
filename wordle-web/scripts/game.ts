@@ -71,19 +71,44 @@ export class Game {
     }
   }
 
-  public validWords(): string[] {
+public validWords(): string[] {
   console.log("Recalculating valid words...");
   return WordList.filter((word) => {
     word = word.toLowerCase();
-    const hasWrongLetter = this.guessedLetters.some(guessedLetter => {
-      const char = guessedLetter.char.toLowerCase();
-      return (word.includes(char) && guessedLetter.state === LetterState.Wrong) ||
-             (!word.includes(char) && (guessedLetter.state === LetterState.Correct || guessedLetter.state === LetterState.Misplaced));
-    });
 
-      return !hasWrongLetter;
+    // Loop through each guess to apply the Wordle rules
+    return this.guesses.every((guess) => {
+      let isWordValid = true;
+
+      // Check each letter in the guess
+      guess.letters.forEach((guessedLetter, index) => {
+        const guessedChar = guessedLetter.char.toLowerCase();
+        const actualChar = word[index];
+
+        // Check if the letter is marked as 'Correct'
+        if (guessedLetter.state === LetterState.Correct) {
+          if (actualChar !== guessedChar) {
+            isWordValid = false; // The letter must be in this exact position
+          }
+        } 
+        // Check if the letter is marked as 'Misplaced'
+        else if (guessedLetter.state === LetterState.Misplaced) {
+          if (!word.includes(guessedChar) || actualChar === guessedChar) {
+            isWordValid = false; // The letter must be in the word but not in this position
+          }
+        }
+        // Check if the letter is marked as 'Wrong'
+        else if (guessedLetter.state === LetterState.Wrong) {
+          if (word.includes(guessedChar)) {
+            isWordValid = false; // The letter should not appear anywhere in the word
+          }
+        }
+      });
+
+      return isWordValid;
     });
-  }
+  });
+}
 
   public addGuess(word: string): void {
     if (this.gameState !== GameState.Playing) return;
