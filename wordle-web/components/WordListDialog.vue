@@ -26,20 +26,32 @@ const dialog = ref(false);
 const { validWords, addGuess, currentGuess } = useGame();
 
 function isWordCompatible(word) {
+  if (!currentGuess.value || !currentGuess.value.letters) {
+    return false; // Guard clause if currentGuess or its letters are undefined
+  }
+
   for (let i = 0; i < currentGuess.value.letters.length; i++) {
     if (currentGuess.value.letters[i] !== null && currentGuess.value.letters[i] !== word[i]) {
       return false; // Letter at position i does not match the guess
     }
   }
-  if (word.split('').some(letter => lettersRuledOut.includes(letter))) {
+
+  if (word.split('').some(letter => lettersRuledOut && lettersRuledOut.includes(letter))) {
     return false; // Word contains a letter that has been ruled out
   }
+
   return true; // The word is compatible with the current guess and ruled out letters
 }
 
-// Compute a filtered list of valid words based on length and compatibility
 const filteredWords = computed(() => {
-  return validWords.value.filter(word => word.length === currentGuess.value.letters.length && isWordCompatible(word));
+  if (!validWords.value || !currentGuess.value) {
+    return []; // Return an empty array if validWords or currentGuess is not defined
+  }
+  
+  return validWords.value.filter(word => 
+    word.length === currentGuess.value.letters.length && 
+    isWordCompatible(word)
+  );
 });
 
 const validWordCount = computed(() => filteredWords.value.length);
