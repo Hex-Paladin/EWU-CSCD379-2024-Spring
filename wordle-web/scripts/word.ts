@@ -87,24 +87,29 @@ export class Word {
     });
   }
 
-  public isCompatibleWith(otherWordString: string): boolean {
-    const otherWord = new Word({ word: otherWordString });
+public isCompatibleWith(otherWordString: string): boolean {
+  const otherWord = new Word({ word: otherWordString });
+  const otherLetters = otherWord.letters.map(l => l.char);
 
-    return this.letters.every((letter, i) => {
-      if (letter.char) {
-        if (letter.state === LetterState.Correct && letter.char !== otherWord.letters[i].char) {
-          return false;
-        }
-        if (letter.state === LetterState.Wrong && otherWord.word.includes(letter.char)) {
-          return false;
-        }
-        if (letter.state === LetterState.Misplaced && (!otherWord.word.includes(letter.char) || otherWord.letters[i].char === letter.char)) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }
+  return this.letters.every((letter, i) => {
+    if (!letter.char) return true; // skip empty letters
+
+    const isCorrectPosition = letter.char === otherWord.letters[i].char;
+    const isInWord = otherLetters.includes(letter.char);
+
+    switch (letter.state) {
+      case LetterState.Correct:
+        return isCorrectPosition;
+      case LetterState.Misplaced:
+        return isInWord && !isCorrectPosition;
+      case LetterState.Wrong:
+        return !isInWord;
+      default:
+        return true;
+    }
+  });
+}
+
 
   public fill(wordString: string): void {
     this.clear();
