@@ -59,7 +59,8 @@ function isWordCompatible(word) {
 
 const filteredWords = computed(() => {
   if (!validWords.value) {
-    return []; // Return an empty array if validWords is not defined
+    console.log('valid words is not dfined');
+    return validWords.value; // Return an empty array if validWords is not defined
   }
 
   // Filter words only if there's a guess and it's not all unknown
