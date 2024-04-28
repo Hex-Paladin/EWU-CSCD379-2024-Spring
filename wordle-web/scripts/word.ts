@@ -88,15 +88,25 @@ export class Word {
   }
 
 public isCompatibleWith(otherWordString: string): boolean {
-  // Create a Set to store all letters marked as 'Wrong' across all guesses
-  const wrongLetters = new Set();
-  this.guesses.forEach(guess => {
-    guess.letters.forEach(letter => {
-      if (letter.state === LetterState.Wrong) {
-        wrongLetters.add(letter.char.toUpperCase());
-      }
-    });
-  });
+  const otherWord = new Word({ word: otherWordString.toUpperCase() });
+
+  // Check against each guess to find if there's any letter marked as 'Wrong'
+  for (const guess of this.guesses) {
+    // Create a set of 'Wrong' letters from each guess
+    const wrongLetters = new Set(
+      guess.letters
+        .filter(letter => letter.state === LetterState.Wrong)
+        .map(letter => letter.char.toUpperCase())
+    );
+
+    // If the other word contains any 'Wrong' letter, return false
+    if (otherWord.letters.some(letter => wrongLetters.has(letter.char))) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
   // Check the other word to ensure it does not contain any of the 'Wrong' letters
   for (let char of otherWordString.toUpperCase()) {
