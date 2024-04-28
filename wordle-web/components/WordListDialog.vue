@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useGame } from '../scripts/game';
 import { LetterState } from '../scripts/letter';
 
@@ -26,8 +26,11 @@ const dialog = ref(false);
 
 // Compute letters ruled out based on the state
 const lettersRuledOut = computed(() => {
+  if (!currentGuess.value || !Array.isArray(currentGuess.value)) {
+    return [];
+  }
   return currentGuess.value.reduce((ruledOut, letter) => {
-    if (letter.state === LetterState.Wrong) {
+    if (letter && letter.state === LetterState.Wrong) {
       ruledOut.push(letter.char);
     }
     return ruledOut;
@@ -35,8 +38,8 @@ const lettersRuledOut = computed(() => {
 });
 
 function isWordCompatible(word) {
-  if (!currentGuess.value || !currentGuess.value.length) {
-    return true; // If there's no guess, assume all words are initially valid
+  if (!currentGuess.value || !Array.isArray(currentGuess.value) || currentGuess.value.length === 0) {
+    return true; // If there's no guess or it's not properly formed, assume all words are initially valid
   }
 
   // Verify that the word does not contain any letters that have been ruled out
@@ -47,7 +50,7 @@ function isWordCompatible(word) {
   // Ensure the word matches the known correct positions
   for (let i = 0; i < currentGuess.value.length; i++) {
     const guess = currentGuess.value[i];
-    if (guess.state === LetterState.Correct && guess.char !== word[i]) {
+    if (guess && guess.state === LetterState.Correct && guess.char !== word[i]) {
       return false;
     }
   }
@@ -56,13 +59,16 @@ function isWordCompatible(word) {
 }
 
 const filteredWords = computed(() => {
-  // This check ensures that if there's no current guess or validWords is not defined, all words are shown
-  if (!validWords.value || !currentGuess.value || currentGuess.value.letters.every(letter => letter === null)) {
-    return validWords.value; // Return all words if no guess has been made
+  if (!validWords.value || !Array.isArray(validWords.value) || !currentGuess.value || !Array.isArray(currentGuess.value)) {
+    return []; // Return an empty array if necessary data is not available or not properly formed
+  }
+
+  if (currentGuess.value.every(letter => letter === null || letter.state === LetterState.Unknown)) {
+    return validWords.value; // Return all words if no valid guess has been made
   }
 
   return validWords.value.filter(word =>
-    word.length === currentGuess.value.letters.length &&
+    word.length === currentGuess.value.length &&
     isWordCompatible(word)
   );
 });
@@ -80,6 +86,7 @@ watch([currentGuess, validWords], () => {
   // Reactively update filtered words when changes occur
 }, { deep: true });
 </script>
+
 
 <style scoped>
 .word-list-dialog {
