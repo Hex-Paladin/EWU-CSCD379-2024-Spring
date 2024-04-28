@@ -1,4 +1,4 @@
-import { reactive, computed, toRefs } from 'vue';
+import { computed, reactive, toRefs } from 'vue';
 import { LetterState, Letter } from './letter';
 import { WordList } from './wordList';
 import { Word } from './word';
@@ -16,7 +16,6 @@ export class Game {
   guessIndex: number = 0;
   gameState: GameState = GameState.Playing;
   guessedLetters: Letter[] = [];
-  recomputeTrigger: boolean = false;  // Add a trigger for recomputation
 
   constructor(maxAttempts: number = 6) {
     this.maxAttempts = maxAttempts;
@@ -29,7 +28,30 @@ export class Game {
     this.guessedLetters = [];
     this.secretWord = WordList[Math.floor(Math.random() * WordList.length)].toUpperCase();
     this.guesses = Array.from({ length: this.maxAttempts }, () => new Word({ maxNumberOfLetters: this.secretWord.length }));
-    console.log(this.secretWord);
+    console.log("Secret word: ", this.secretWord);
+  }
+
+  get currentGuess(): Word {
+    return this.guesses[this.guessIndex];
+  }
+
+  public removeLastLetter(): void {
+    if (this.gameState === GameState.Playing) {
+      this.currentGuess.removeLastLetter();
+    }
+  }
+
+  public addLetter(letter: string): void {
+    if (this.gameState === GameState.Playing && letter.length === 1) {
+      this.currentGuess.addLetter(letter);
+      let existingLetterIndex = this.guessedLetters.findIndex(l => l.char.toUpperCase() === letter.toUpperCase());
+      if (existingLetterIndex !== -1) {
+        // Update the letter state reactively
+        this.guessedLetters[existingLetterIndex] = new Letter(letter, LetterState.Unknown);
+      } else {
+        this.guessedLetters.push(new Letter(letter, LetterState.Unknown));
+      }
+    }
   }
 
   public submitGuess(): void {
@@ -47,10 +69,10 @@ export class Game {
     } else {
       this.guessIndex++;
     }
-    this.recomputeTrigger = !this.recomputeTrigger;  // Toggle to force reactivity
   }
 
   public validWords(): string[] {
+    console.log("Recalculating valid words...");
     return WordList.filter((word) => {
       for (let guessedLetter of this.guessedLetters) {
         const char = guessedLetter.char.toLowerCase();
@@ -63,18 +85,37 @@ export class Game {
       return true;
     });
   }
+
+  public addGuess(word: string): void {
+    if (this.gameState !== GameState.Playing) return;
+
+    this.currentGuess.fill(word.toUpperCase());
+    this.submitGuess();
+    this.guesses = [...this.guesses]; // ensure reactivity
+  }
+
+  public updateGuessedLetters(): void {
+    this.currentGuess.letters.forEach((letter) => {
+      const existingLetterIndex = this.guessedLetters.findIndex(l => l.char === letter.char);
+      if (existingLetterIndex !== -1) {
+        // Update the letter state reactively
+        const existingLetter = this.guessedLetters[existingLetterIndex];
+        if (letter.state > existingLetter.state) {
+          this.guessedLetters[existingLetterIndex] = new Letter(letter.char, letter.state);
+        }
+      } else {
+        this.guessedLetters.push(new Letter(letter.char, letter.state));
+      }
+    });
+    this.guessedLetters = [...this.guessedLetters]; // Force reactivity
+  }
 }
 
-// In your composition function
-export function useGame() {
-  const gameInstance = reactive(new Game());
-  const validWords = computed(() => {
-    // Access the recomputeTrigger to establish a reactive dependency
-    gameInstance.recomputeTrigger;  
-    return gameInstance.validWords();
-  });
+const gameInstance = reactive(new Game());
 
+export function useGame() {
   const refs = toRefs(gameInstance);
+  const validWords = computed(() => gameInstance.validWords());
 
   return {
     ...refs,
