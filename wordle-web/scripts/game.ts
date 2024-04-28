@@ -100,14 +100,12 @@ public addGuess(word: string): void {
   // Ensure the word is the correct length
   if (word.length === this.secretWord.length) {
     // Add each letter of the word to the current guess
-    for (const char of word) {
+    word.split('').forEach(char => {
       this.addLetter(char.toUpperCase());
-    }
-    
-    // Submit the guess after populating it
-    this.submitGuess();
+    });
   }
 }
+
 
 
   public updateGuessedLetters(): void {
