@@ -31,10 +31,10 @@ import { useGame } from '../scripts/game';
 
 const dialog = ref(false);
 // Destructure the validWords and other methods directly
-const { validWords, submitGuess } = useGame();
+const { validWords, addGuess } = useGame();
 
 function selectWord(word) {
-  submitGuess(word);
+  addGuess(word);
   dialog.value = false; // Close the dialog
 }
 </script>
