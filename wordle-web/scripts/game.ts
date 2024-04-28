@@ -44,6 +44,12 @@ export class Game {
   public addLetter(letter: string): void {
     if (this.gameState === GameState.Playing && letter.length === 1) {
       this.currentGuess.addLetter(letter);
+      let existingLetter = this.guessedLetters.find(l => l.char === letter);
+      if (existingLetter) {
+        existingLetter.state = LetterState.Unknown; // Assuming you handle the state elsewhere
+      } else {
+        this.guessedLetters.push(new Letter(letter, LetterState.Unknown));
+      }
     }
   }
 
@@ -64,18 +70,26 @@ export class Game {
     }
   }
 
-  // Define a method that will be converted into a computed property in the reactive context
-  public calculateValidWords(): string[] {
-    return WordList.filter(word => this.guesses.every(guess => guess.isCompatibleWith(word)));
+  public validWords(): string[] {
+    return WordList.filter((word) => {
+      for (let guessedLetter of this.guessedLetters) {
+        const char = guessedLetter.char.toLowerCase();
+        const isInWord = word.toLowerCase().includes(char);
+        if ((isInWord && guessedLetter.state === LetterState.Wrong) ||
+            (!isInWord && (guessedLetter.state === LetterState.Correct || guessedLetter.state === LetterState.Misplaced))) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
-public addGuess(word: string): void {
-  if (this.gameState !== GameState.Playing) return;
+  public addGuess(word: string): void {
+    if (this.gameState !== GameState.Playing) return;
 
-  this.currentGuess.fill(word.toUpperCase());
-  this.guesses = [...this.guesses];
-}
-
+    this.currentGuess.fill(word.toUpperCase());
+    this.guesses = [...this.guesses]; // ensure reactivity
+  }
 
   public updateGuessedLetters(): void {
     this.currentGuess.letters.forEach((letter) => {
@@ -93,15 +107,10 @@ public addGuess(word: string): void {
 
 const gameInstance = reactive(new Game());
 
-const validWords = computed(() => {
-  return WordList.filter(word => gameInstance.guesses.every(guess => guess.isCompatibleWith(word)));
-});
-
 export function useGame() {
-  // toRefs will convert each property on the reactive gameInstance into a ref
   const refs = toRefs(gameInstance);
-  
-  // Now, include the computed property for validWords in the object returned by useGame.
+  const validWords = computed(() => gameInstance.validWords());
+
   return {
     ...refs,
     validWords,
