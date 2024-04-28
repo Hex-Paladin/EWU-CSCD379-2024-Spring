@@ -93,17 +93,23 @@ export class Game {
   }
 }
 
-const game = reactive(new Game());
+const gameInstance = reactive(new Game());
 
-const validWords = computed(() => WordList.filter(word => game.guesses.every(guess => guess.isCompatibleWith(word))));
+const validWords = computed(() => {
+  return WordList.filter(word => gameInstance.guesses.every(guess => guess.isCompatibleWith(word)));
+});
 
 export function useGame() {
+  // toRefs will convert each property on the reactive gameInstance into a ref
+  const refs = toRefs(gameInstance);
+  
+  // Now, include the computed property for validWords in the object returned by useGame.
   return {
-    ...toRefs(game),
+    ...refs,
     validWords,
-    addGuess: (word: string) => game.addGuess(word),
-    startNewGame: () => game.startNewGame(),
-    submitGuess: () => game.submitGuess(),
-    updateGuessedLetters: () => game.updateGuessedLetters(),
+    addGuess: gameInstance.addGuess.bind(gameInstance),
+    startNewGame: gameInstance.startNewGame.bind(gameInstance),
+    submitGuess: gameInstance.submitGuess.bind(gameInstance),
+    updateGuessedLetters: gameInstance.updateGuessedLetters.bind(gameInstance),
   };
 }
