@@ -35,6 +35,7 @@ const { validWords, addGuess } = useGame();
 
 function selectWord(word) {
   console.log('Word selected:', word); // Log the selected word
+  emit('word-selected', word);
   addGuess(word);
   dialog.value = false; // Close the dialog
 }
