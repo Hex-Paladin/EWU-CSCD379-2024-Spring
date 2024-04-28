@@ -99,7 +99,7 @@ public addGuess(word: string): void {
   
   // Add each letter of the word to the current guess
   for (let i = 0; i < word.length; i++){
-    this.addLetter(word[i].toUpperCase());
+    addLetter(word[i].toUpperCase());
   }
 }
 
