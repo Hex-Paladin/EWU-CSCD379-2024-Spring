@@ -59,7 +59,7 @@ export class Word {
     });
 
     // Check for misplaced letters
-    this.letters.forEach((guessedLetter) => {
+    this.letters.forEach((guessedLetter, i) => {
       if (guessedLetter.state === LetterState.Wrong) {
         const sameLetterInSecret = secretWord.letters.find(
           (toGuessLetter) => toGuessLetter.char === guessedLetter.char && toGuessLetter.state !== LetterState.Correct
@@ -87,37 +87,19 @@ export class Word {
     });
   }
 
-public isCompatibleWith(otherWordString: string): boolean {
-  const otherWord = new Word({ word: otherWordString.toUpperCase() });
+  public isCompatibleWith(otherWordString: string): boolean {
+    const otherWord = new Word({ word: otherWordString.toUpperCase() });
 
-  // Check against each guess to find if there's any letter marked as 'Wrong'
-  for (const guess of this.guesses) {
-    // Create a set of 'Wrong' letters from each guess
+    // Create a set of 'Wrong' letters from all guesses
     const wrongLetters = new Set(
-      guess.letters
+      this.letters
         .filter(letter => letter.state === LetterState.Wrong)
         .map(letter => letter.char.toUpperCase())
     );
 
     // If the other word contains any 'Wrong' letter, return false
-    if (otherWord.letters.some(letter => wrongLetters.has(letter.char))) {
-      return false;
-    }
+    return !otherWord.letters.some(letter => wrongLetters.has(letter.char));
   }
-
-  return true;
-}
-
-  // Check the other word to ensure it does not contain any of the 'Wrong' letters
-  for (let char of otherWordString.toUpperCase()) {
-    if (wrongLetters.has(char)) {
-      return false; // If any wrong letter is found in the word, it's not valid
-    }
-  }
-
-  return true; // If no wrong letters are found, the word is valid
-}
-
 
   public fill(wordString: string): void {
     this.clear();
