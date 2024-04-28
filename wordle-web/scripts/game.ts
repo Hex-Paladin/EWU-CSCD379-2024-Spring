@@ -69,15 +69,18 @@ export class Game {
     return WordList.filter(word => this.guesses.every(guess => guess.isCompatibleWith(word)));
   }
 
-  public addGuess(word: string): void {
-    if (this.gameState !== GameState.Playing) return;
+public addGuess(word: string): void {
+  if (this.gameState !== GameState.Playing) return;
 
-    this.currentGuess.clear();
+  this.currentGuess.clear();
 
-    for (let char of word.toUpperCase()) {
-      this.addLetter(char);
-    }
+  for (let char of word.toUpperCase()) {
+    this.addLetter(char);
   }
+  
+  this.submitGuess(); // Submit the guess to update game state and guesses
+}
+
 
   public updateGuessedLetters(): void {
     this.currentGuess.letters.forEach((letter) => {
