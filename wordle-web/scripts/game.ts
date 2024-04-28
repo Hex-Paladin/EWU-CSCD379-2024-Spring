@@ -10,37 +10,28 @@ export enum GameState {
 }
 
 export class Game {
-  public maxAttempts: number;
-  public guesses: Word[];
-  public secretWord: string;
-  public guessIndex: number;
-  public gameState: GameState;
-  public guessedLetters: Letter[];
+  maxAttempts: number = 6;
+  guesses: Word[] = [];
+  secretWord: string = '';
+  guessIndex: number = 0;
+  gameState: GameState = GameState.Playing;
+  guessedLetters: Letter[] = [];
 
   constructor(maxAttempts: number = 6) {
     this.maxAttempts = maxAttempts;
-    this.secretWord = '';
-    this.guessIndex = 0;
-    this.gameState = GameState.Playing;
-    this.guessedLetters = [];
-    this.guesses = [];
     this.startNewGame();
   }
 
-  public startNewGame() {
+  startNewGame() {
     this.guessIndex = 0;
     this.gameState = GameState.Playing;
     this.guessedLetters = [];
-
-    // Get a random word from the word list
     this.secretWord = WordList[Math.floor(Math.random() * WordList.length)].toUpperCase();
-    console.log(this.secretWord);
-
-    // Populate guesses with the correct number of empty words
     this.guesses = Array.from({ length: this.maxAttempts }, () => new Word({ maxNumberOfLetters: this.secretWord.length }));
+    console.log(this.secretWord);
   }
 
-  public get currentGuess(): Word {
+  get currentGuess(): Word {
     return this.guesses[this.guessIndex];
   }
 
@@ -102,23 +93,17 @@ export class Game {
   }
 }
 
-// Create a reactive instance of Game to be used across the application
-const gameInstance = reactive(new Game());
+const game = reactive(new Game());
 
-// Create a computed ref for validWords inside the reactive context
-gameInstance.validWords = computed(() => gameInstance.calculateValidWords());
+const validWords = computed(() => WordList.filter(word => game.guesses.every(guess => guess.isCompatibleWith(word))));
 
 export function useGame() {
-  // Create a shallow reactive copy of gameInstance
-  const gameRefs = toRefs(gameInstance);
-
   return {
-    ...gameRefs,
-    // Now we include the computed property as part of the return value
-    validWords: gameInstance.validWords,
-    addGuess: gameInstance.addGuess.bind(gameInstance),
-    startNewGame: gameInstance.startNewGame.bind(gameInstance),
-    submitGuess: gameInstance.submitGuess.bind(gameInstance),
-    updateGuessedLetters: gameInstance.updateGuessedLetters.bind(gameInstance),
+    ...toRefs(game),
+    validWords,
+    addGuess: (word: string) => game.addGuess(word),
+    startNewGame: () => game.startNewGame(),
+    submitGuess: () => game.submitGuess(),
+    updateGuessedLetters: () => game.updateGuessedLetters(),
   };
 }
