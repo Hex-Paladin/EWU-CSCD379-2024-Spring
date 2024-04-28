@@ -29,6 +29,9 @@
 import { ref } from 'vue';
 import { useGame } from '../scripts/game';
 
+// Define the emits
+const emit = defineEmits(['word-selected']);
+
 const dialog = ref(false);
 // Destructure the validWords and other methods directly
 const { validWords, addGuess } = useGame();
@@ -38,7 +41,6 @@ function selectWord(word) {
   emit('word-selected', word);
   dialog.value = false; // Close the dialog
 }
-
 </script>
 
 <style scoped>
