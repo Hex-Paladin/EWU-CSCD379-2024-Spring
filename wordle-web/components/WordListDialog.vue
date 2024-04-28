@@ -59,19 +59,29 @@ function isWordCompatible(word) {
 }
 
 const filteredWords = computed(() => {
-  if (!validWords.value || !Array.isArray(validWords.value) || !currentGuess.value || !Array.isArray(currentGuess.value)) {
-    return []; // Return an empty array if necessary data is not available or not properly formed
+  // Ensure validWords is properly formatted and available
+  if (!validWords.value || !Array.isArray(validWords.value)) {
+    return []; // Return an empty array if validWords is not correctly initialized
   }
 
-  if (currentGuess.value.every(letter => letter === null || letter.state === LetterState.Unknown)) {
-    return validWords.value; // Return all words if no valid guess has been made
+  // Check if a valid guess has been made
+  // We assume no valid guess if currentGuess.value is empty or all entries are null or Unknown
+  const noValidGuessMade = !currentGuess.value || 
+                           currentGuess.value.length === 0 || 
+                           currentGuess.value.every(letter => letter === null || letter.state === LetterState.Unknown);
+
+  // Return all valid words if no guess has been made or the current guess does not affect the words
+  if (noValidGuessMade) {
+    return validWords.value;
   }
 
+  // Otherwise, filter words based on the guess
   return validWords.value.filter(word =>
     word.length === currentGuess.value.length &&
     isWordCompatible(word)
   );
 });
+
 
 const validWordCount = computed(() => filteredWords.value.length);
 
