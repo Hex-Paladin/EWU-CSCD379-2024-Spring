@@ -58,20 +58,36 @@ function isWordCompatible(word) {
 }
 
 const filteredWords = computed(() => {
+  console.log('Computing filtered words...');
   if (!validWords.value) {
-    console.log('valid words is not dfined');
-    return validWords.value; // Return an empty array if validWords is not defined
+    console.error('validWords.value is undefined or null.');
+    return []; // Return an empty array if validWords is not defined
   }
 
-  // Filter words only if there's a guess and it's not all unknown
-  if (!currentGuess.value || !currentGuess.value.letters || currentGuess.value.letters.every(letter => !letter.char || letter.state === LetterState.Unknown)) {
+  // Debug output for currentGuess and lettersRuledOut
+  console.log('Current Guess:', currentGuess.value?.letters?.map(l => `${l.char} (${l.state})`).join(', '));
+  console.log('Letters Ruled Out:', lettersRuledOut.value);
+
+  // Determine if there's a valid guess made
+  const hasValidGuess = currentGuess.value && currentGuess.value.letters && !currentGuess.value.letters.every(letter => !letter.char || letter.state === LetterState.Unknown);
+
+  console.log(`Has valid guess: ${hasValidGuess}`);
+
+  if (!hasValidGuess) {
+    console.log('No valid guess, returning all valid words.');
     return validWords.value; // Return all words if no valid guess has been made
   }
 
-  return validWords.value.filter(word =>
-    word.length === currentGuess.value.letters.length &&
-    isWordCompatible(word)
-  );
+  const compatibleWords = validWords.value.filter(word => {
+    const isCompatible = word.length === currentGuess.value.letters.length && isWordCompatible(word);
+    if (!isCompatible) {
+      console.log(`Word '${word}' is not compatible with the current guess.`);
+    }
+    return isCompatible;
+  });
+
+  console.log(`Filtered words count: ${compatibleWords.length}`);
+  return compatibleWords;
 });
 
 const validWordCount = computed(() => filteredWords.value.length);
