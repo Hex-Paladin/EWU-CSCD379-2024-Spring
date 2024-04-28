@@ -72,9 +72,8 @@ export class Game {
 public addGuess(word: string): void {
   if (this.gameState !== GameState.Playing) return;
 
-  // Instead of directly modifying the currentGuess, replace it with a new Word instance if necessary
-  this.guesses[this.guessIndex] = new Word({maxNumberOfLetters: this.secretWord.length});
-  this.guesses[this.guessIndex].fill(word.toUpperCase());
+  this.currentGuess.fill(word.toUpperCase());
+  this.guesses = [...this.guesses];
 }
 
 
