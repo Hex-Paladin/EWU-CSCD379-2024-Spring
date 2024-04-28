@@ -72,17 +72,16 @@ export class Game {
   }
 
   public validWords(): string[] {
-    console.log("Recalculating valid words...");
-    return WordList.filter((word) => {
-      for (let guessedLetter of this.guessedLetters) {
-        const char = guessedLetter.char.toLowerCase();
-        const isInWord = word.toLowerCase().includes(char);
-        if ((isInWord && guessedLetter.state === LetterState.Wrong) ||
-            (!isInWord && (guessedLetter.state === LetterState.Correct || guessedLetter.state === LetterState.Misplaced))) {
-          return false;
-        }
-      }
-      return true;
+  console.log("Recalculating valid words...");
+  return WordList.filter((word) => {
+    word = word.toLowerCase();
+    const hasWrongLetter = this.guessedLetters.some(guessedLetter => {
+      const char = guessedLetter.char.toLowerCase();
+      return (word.includes(char) && guessedLetter.state === LetterState.Wrong) ||
+             (!word.includes(char) && (guessedLetter.state === LetterState.Correct || guessedLetter.state === LetterState.Misplaced));
+    });
+
+      return !hasWrongLetter;
     });
   }
 
