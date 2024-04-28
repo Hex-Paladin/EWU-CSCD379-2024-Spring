@@ -54,29 +54,30 @@ export class Game {
     }
   }
 
-  public submitGuess(): void {
-    if (this.gameState !== GameState.Playing || !this.currentGuess.isFilled || !this.currentGuess.isValidWord()) {
-      return;
-    }
-
-    const isCorrect = this.currentGuess.compare(this.secretWord);
-    this.updateGuessedLetters();
-
-    if (isCorrect) {
-      this.gameState = GameState.Won;
-    } else if (this.guessIndex >= this.maxAttempts - 1) {
-      this.gameState = GameState.Lost;
-    } else {
-      this.guessIndex++;
-    }
+public submitGuess(): void {
+  if (this.gameState !== GameState.Playing || !this.currentGuess.isFilled || !this.currentGuess.isValidWord()) {
+    return;
   }
+
+  const isCorrect = this.currentGuess.compare(this.secretWord);
+  this.updateGuessedLetters();
+
+  if (isCorrect) {
+    this.gameState = GameState.Won;
+  } else if (this.guessIndex >= this.maxAttempts - 1) {
+    this.gameState = GameState.Lost;
+  } else {
+    this.guessIndex++;
+  }
+  this.guessedLetters = [...this.guessedLetters];
+}
 
 public validWords(): string[] {
   console.log("Recalculating valid words...");
   return WordList.filter((word) => {
     word = word.toLowerCase();
 
-    // Loop through each guess to apply the Wordle rules
+    // Check each guess
     return this.guesses.every((guess) => {
       let isWordValid = true;
 
@@ -85,22 +86,22 @@ public validWords(): string[] {
         const guessedChar = guessedLetter.char.toLowerCase();
         const actualChar = word[index];
 
-        // Check if the letter is marked as 'Correct'
+        // Letter marked as 'Correct' must be in the exact position
         if (guessedLetter.state === LetterState.Correct) {
           if (actualChar !== guessedChar) {
-            isWordValid = false; // The letter must be in this exact position
+            isWordValid = false;
           }
         } 
-        // Check if the letter is marked as 'Misplaced'
+        // Letter marked as 'Misplaced' must be in the word, but not in the guessed position
         else if (guessedLetter.state === LetterState.Misplaced) {
           if (!word.includes(guessedChar) || actualChar === guessedChar) {
-            isWordValid = false; // The letter must be in the word but not in this position
+            isWordValid = false;
           }
         }
-        // Check if the letter is marked as 'Wrong'
+        // Letter marked as 'Wrong' should not appear anywhere in the word
         else if (guessedLetter.state === LetterState.Wrong) {
           if (word.includes(guessedChar)) {
-            isWordValid = false; // The letter should not appear anywhere in the word
+            isWordValid = false;
           }
         }
       });
