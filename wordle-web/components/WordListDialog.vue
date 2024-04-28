@@ -3,22 +3,13 @@
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
         <v-card-title>Known Incantations ({{ validWordCount }})</v-card-title>
-          <v-virtual-scroll
-            :height="300"
-            :items="filteredValidWords"
-            item-height="48"
-            >
-        <template v-slot="{ item }">
-        <v-list-item
-          class="word-item"
-          @click="selectWord(item)"
-        >
-      {{ item }}
-    </v-list-item>
-  </template>
-</v-virtual-scroll>
-
-        </v-card-text>
+        <v-virtual-scroll :height="300" :items="filteredWords" item-height="48">
+          <template v-slot="{ item }">
+            <v-list-item class="word-item" @click="selectWord(item)">
+              {{ item }}
+            </v-list-item>
+          </template>
+        </v-virtual-scroll>
       </v-card>
     </v-dialog>
     <v-btn @click="dialog = true">Spellbook</v-btn>
@@ -31,47 +22,45 @@ import { useGame } from '../scripts/game';
 
 const emit = defineEmits(['word-selected']);
 const dialog = ref(false);
+
 const { validWords, addGuess, currentGuess } = useGame();
 
-// Create a reactive reference for the filtered valid words
-const filteredValidWords = computed(() => {
-  return validWords.value.filter(word => 
-    word.length === currentGuess.value.letters.length && 
-    isWordCompatible(word)
-  );
+function isWordCompatible(word) {
+  for (let i = 0; i < currentGuess.value.letters.length; i++) {
+    if (currentGuess.value.letters[i] !== null && currentGuess.value.letters[i] !== word[i]) {
+      return false; // Letter at position i does not match the guess
+    }
+  }
+  if (word.split('').some(letter => lettersRuledOut.includes(letter))) {
+    return false; // Word contains a letter that has been ruled out
+  }
+  return true; // The word is compatible with the current guess and ruled out letters
+}
+
+// Compute a filtered list of valid words based on length and compatibility
+const filteredWords = computed(() => {
+  return validWords.value.filter(word => word.length === currentGuess.value.letters.length && isWordCompatible(word));
 });
 
-// Compute the count of valid words
-const validWordCount = computed(() => filteredValidWords.value.length);
-
-// Example function to check if a word is compatible with the current guess
-function isWordCompatible(word) {
-  // Implement your logic to check if a word can still be used based on game rules
-  // For example, if no letter of the word has been guessed or ruled out
-  return true; // Placeholder
-}
+const validWordCount = computed(() => filteredWords.value.length);
 
 function selectWord(word) {
-  console.log('Word selected:', word); // Log the selected word
-  addGuess(word); // Assuming addGuess updates the game state
+  console.log('Word selected:', word);
+  addGuess(word);
   emit('word-selected', word);
-  dialog.value = false; // Close the dialog
-  // Optionally, remove the word from the list (already handled by reactivity)
+  dialog.value = false;
 }
 
-// React to changes in the game's current guess or valid words list
 watch([currentGuess, validWords], () => {
-  // This will trigger reactivity whenever the current guess or valid words list changes
+  // Update filtered words whenever the current guess or valid words change
 }, { deep: true });
-
 </script>
-
 
 <style scoped>
 .word-list-dialog {
   display: flex;
-  justify-content: flex-end; /* Align to the right */
-  margin-bottom: 10px; /* Adjust spacing as needed */
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
 
 .word-item {
@@ -81,6 +70,6 @@ watch([currentGuess, validWords], () => {
 }
 
 .word-item:hover {
-  background-color: #e0e0e0; /* Highlight item on hover */
+  background-color: #e0e0e0;
 }
 </style>
