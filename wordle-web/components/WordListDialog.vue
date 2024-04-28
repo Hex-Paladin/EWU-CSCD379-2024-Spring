@@ -27,7 +27,7 @@ const emit = defineEmits(['word-selected']);
 
 // Compute letters ruled out based on the state
 const lettersRuledOut = computed(() => {
-  return currentGuess.value?.reduce((ruledOut, letter) => {
+  return currentGuess.value?.letters?.reduce((ruledOut, letter) => {
     if (letter.state === LetterState.Wrong) {
       ruledOut.push(letter.char);
     }
@@ -36,8 +36,9 @@ const lettersRuledOut = computed(() => {
 });
 
 function isWordCompatible(word) {
-  if (!currentGuess.value || currentGuess.value.every(letter => !letter || letter.state === LetterState.Unknown)) {
-    return true; // If there's no valid guess, assume all words are initially valid
+  // If there's no valid guess or the game just started, assume all words are initially valid
+  if (!currentGuess.value || !currentGuess.value.letters || currentGuess.value.letters.every(letter => !letter.char || letter.state === LetterState.Unknown)) {
+    return true;
   }
 
   // Verify that the word does not contain any letters that have been ruled out
@@ -46,9 +47,9 @@ function isWordCompatible(word) {
   }
 
   // Ensure the word matches the known correct positions
-  for (let i = 0; i < currentGuess.value.length; i++) {
-    const guess = currentGuess.value[i];
-    if (guess && guess.state === LetterState.Correct && guess.char !== word[i]) {
+  for (let i = 0; i < currentGuess.value.letters.length; i++) {
+    const guess = currentGuess.value.letters[i];
+    if (guess.char && guess.state === LetterState.Correct && guess.char !== word[i]) {
       return false;
     }
   }
@@ -62,12 +63,12 @@ const filteredWords = computed(() => {
   }
 
   // Filter words only if there's a guess and it's not all unknown
-  if (!currentGuess.value || currentGuess.value.every(letter => !letter || letter.state === LetterState.Unknown)) {
+  if (!currentGuess.value || !currentGuess.value.letters || currentGuess.value.letters.every(letter => !letter.char || letter.state === LetterState.Unknown)) {
     return validWords.value; // Return all words if no valid guess has been made
   }
 
   return validWords.value.filter(word =>
-    word.length === currentGuess.value.length &&
+    word.length === currentGuess.value.letters.length &&
     isWordCompatible(word)
   );
 });
@@ -81,6 +82,7 @@ function selectWord(word) {
   dialog.value = false;
 }
 </script>
+
 
 <style scoped>
 .word-list-dialog {
