@@ -88,11 +88,13 @@ export class Game {
     return WordList.filter(word => this.guesses.every(guess => guess.isCompatibleWith(word)));
   }
 
-  public addGuess(word: string): void {
+public addGuess(word: string): void {
+  this.currentGuess.clear();
     if (this.gameState === GameState.Playing && word.length === this.secretWord.length) {
-      this.currentGuess.fill(word.toUpperCase());
-    }
+    // Fill the current guess with the new word
+    this.currentGuess.fill(word.toUpperCase());
   }
+}
 
   public updateGuessedLetters(): void {
     for (const letter of this.currentGuess.letters) {
