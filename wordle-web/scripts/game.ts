@@ -1,7 +1,7 @@
-import { computed, ComputedRef, reactive, toRefs  } from 'vue';
-import { LetterState, Letter } from "./letter";
-import { WordList } from "./wordList";
-import { Word } from "./word";
+import { computed, reactive, toRefs } from 'vue';
+import { LetterState, Letter } from './letter';
+import { WordList } from './wordList';
+import { Word } from './word';
 
 export enum GameState {
   Playing,
@@ -32,18 +32,12 @@ export class Game {
     this.gameState = GameState.Playing;
     this.guessedLetters = [];
 
-    // Get random word from word list
-    this.secretWord =
-      WordList[Math.floor(Math.random() * WordList.length)].toUpperCase();
+    // Get a random word from the word list
+    this.secretWord = WordList[Math.floor(Math.random() * WordList.length)].toUpperCase();
     console.log(this.secretWord);
 
     // Populate guesses with the correct number of empty words
-    this.guesses = [];
-    for (let i = 0; i < this.maxAttempts; i++) {
-      this.guesses.push(
-        new Word({ maxNumberOfLetters: this.secretWord.length })
-      );
-    }
+    this.guesses = Array.from({ length: this.maxAttempts }, () => new Word({ maxNumberOfLetters: this.secretWord.length }));
   }
 
   public get currentGuess(): Word {
@@ -63,10 +57,7 @@ export class Game {
   }
 
   public submitGuess(): void {
-    if (this.gameState !== GameState.Playing) return;
-    if (!this.currentGuess.isFilled) return;
-    if (!this.currentGuess.isValidWord()) {
-      this.currentGuess.clear();
+    if (this.gameState !== GameState.Playing || !this.currentGuess.isFilled || !this.currentGuess.isValidWord()) {
       return;
     }
 
@@ -75,61 +66,55 @@ export class Game {
 
     if (isCorrect) {
       this.gameState = GameState.Won;
+    } else if (this.guessIndex >= this.maxAttempts - 1) {
+      this.gameState = GameState.Lost;
     } else {
-      if (this.guessIndex >= this.maxAttempts - 1) {
-        this.gameState = GameState.Lost;
-      } else {
-        this.guessIndex++;
-      }
+      this.guessIndex++;
     }
   }
 
-  get validWords(): string[] {
+  // Define a method that will be converted into a computed property in the reactive context
+  public calculateValidWords(): string[] {
     return WordList.filter(word => this.guesses.every(guess => guess.isCompatibleWith(word)));
   }
 
-public addGuess(word: string): void {
-  console.log('Adding guess:', word); // Keep this for debugging
+  public addGuess(word: string): void {
+    if (this.gameState !== GameState.Playing) return;
 
-  // Ensure the game is in the 'Playing' state
-  if (this.gameState !== GameState.Playing) return;
+    this.currentGuess.clear();
 
-  // Clear the current guess before adding the new letters
-  this.currentGuess.clear();
-  
-  // Add each letter of the word to the current guess
-  for (let i = 0; i < word.length; i++){
-    this.addLetter(word[i].toUpperCase());
+    for (let char of word.toUpperCase()) {
+      this.addLetter(char);
+    }
   }
-}
-
-
-
 
   public updateGuessedLetters(): void {
-    for (const letter of this.currentGuess.letters) {
-      const index = this.guessedLetters.findIndex(
-        (existingLetter) => existingLetter.char === letter.char
-      );
-      if (index !== -1) {
-        if (letter.state !== LetterState.Correct) {
-          this.guessedLetters[index] = letter;
+    this.currentGuess.letters.forEach((letter) => {
+      const existingLetter = this.guessedLetters.find(existing => existing.char === letter.char);
+      if (existingLetter) {
+        if (letter.state > existingLetter.state) {
+          existingLetter.state = letter.state;
         }
       } else {
         this.guessedLetters.push(letter);
       }
-    }
+    });
   }
 }
 
 // Create a reactive instance of Game to be used across the application
 const gameInstance = reactive(new Game());
 
+// Create a computed ref for validWords inside the reactive context
+gameInstance.validWords = computed(() => gameInstance.calculateValidWords());
+
 export function useGame() {
-  // Create reactive references for the game instance properties and methods
+  // Create a shallow reactive copy of gameInstance
+  const gameRefs = toRefs(gameInstance);
+
   return {
-    ...toRefs(gameInstance),
-    // Directly return the reactive reference for validWords
+    ...gameRefs,
+    // Now we include the computed property as part of the return value
     validWords: gameInstance.validWords,
     addGuess: gameInstance.addGuess.bind(gameInstance),
     startNewGame: gameInstance.startNewGame.bind(gameInstance),
