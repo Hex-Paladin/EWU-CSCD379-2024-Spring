@@ -89,7 +89,7 @@ export class Game {
   }
 
 public addGuess(word: string): void {
-  console.log('Adding guess:', word); // Log the word being added as a guess
+  console.log('Adding guess:', word); // Keep this for debugging
 
   // Ensure the game is in the 'Playing' state
   if (this.gameState !== GameState.Playing) return;
@@ -97,14 +97,12 @@ public addGuess(word: string): void {
   // Clear the current guess before adding the new letters
   this.currentGuess.clear();
   
-  // Ensure the word is the correct length
-  if (word.length === this.secretWord.length) {
-    // Add each letter of the word to the current guess
-    word.split('').forEach(char => {
-      this.addLetter(char.toUpperCase());
-    });
+  // Add each letter of the word to the current guess
+  for (let i = 0; i < word.length; i++){
+    this.addLetter(word[i].toUpperCase());
   }
 }
+
 
 
 
