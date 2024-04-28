@@ -26,8 +26,11 @@ const dialog = ref(false);
 const { validWords, addGuess, currentGuess } = useGame();
 
 function isWordCompatible(word) {
+  // Assuming lettersRuledOut is defined somewhere in your script or should be passed/imported
+  const lettersRuledOut = []; // Define or import this according to your application logic
+
   if (!currentGuess.value || !currentGuess.value.letters) {
-    return false; // Guard clause if currentGuess or its letters are undefined
+    return true; // If no guess is made yet, consider all words as compatible
   }
 
   for (let i = 0; i < currentGuess.value.letters.length; i++) {
@@ -36,7 +39,7 @@ function isWordCompatible(word) {
     }
   }
 
-  if (word.split('').some(letter => lettersRuledOut && lettersRuledOut.includes(letter))) {
+  if (word.split('').some(letter => lettersRuledOut.includes(letter))) {
     return false; // Word contains a letter that has been ruled out
   }
 
@@ -44,12 +47,13 @@ function isWordCompatible(word) {
 }
 
 const filteredWords = computed(() => {
-  if (!validWords.value || !currentGuess.value) {
-    return []; // Return an empty array if validWords or currentGuess is not defined
+  // This check ensures that if there's no current guess or validWords is not defined, all words are shown
+  if (!validWords.value || !currentGuess.value || currentGuess.value.letters.every(letter => letter === null)) {
+    return validWords.value; // Return all words if no guess has been made
   }
-  
-  return validWords.value.filter(word => 
-    word.length === currentGuess.value.letters.length && 
+
+  return validWords.value.filter(word =>
+    word.length === currentGuess.value.letters.length &&
     isWordCompatible(word)
   );
 });
@@ -64,7 +68,7 @@ function selectWord(word) {
 }
 
 watch([currentGuess, validWords], () => {
-  // Update filtered words whenever the current guess or valid words change
+  // Reactively update filtered words when changes occur
 }, { deep: true });
 </script>
 
