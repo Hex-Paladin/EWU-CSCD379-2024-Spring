@@ -96,6 +96,3 @@ export class Word {
     });
   }
 }
-
-  }
-}
