@@ -45,18 +45,23 @@ export class Word {
   }
 
   public compare(secretWordString: string): boolean {
-    const secretWord = new Word({ word: secretWordString });
-    let isMatch = true;
+    secretWordString = secretWordString.toLowerCase();
+    let isCorrect = true;
 
-    // Check for correct letters
-    this.letters.forEach((letter, i) => {
-      if (letter.char === secretWord.letters[i].char) {
+    this.letters.forEach((letter, index) => {
+      if (letter.char.toLowerCase() === secretWordString[index]) {
         letter.state = LetterState.Correct;
+      } else if (secretWordString.includes(letter.char.toLowerCase())) {
+          letter.state = LetterState.Misplaced;
+        isCorrect = false;
       } else {
-        isMatch = false;
-        letter.state = LetterState.Wrong; // Preset to wrong before checking for misplaced
+        letter.state = LetterState.Wrong;
+        isCorrect = false;
       }
     });
+
+    return isCorrect;
+  }
 
     // Check for misplaced letters
     this.letters.forEach((guessedLetter, i) => {
