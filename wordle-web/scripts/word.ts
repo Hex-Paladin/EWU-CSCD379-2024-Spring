@@ -44,25 +44,36 @@ export class Word {
     return this.letters.every((letter) => letter.char);
   }
 
-  public compare(secretWordString: string): boolean {
-    secretWordString = secretWordString.toLowerCase();
-    let isCorrect = true;
+public compare(secretWordString: string): boolean {
+  secretWordString = secretWordString.toLowerCase();
+  let isMatch = true;
+  const secretWordArray = secretWordString.split('');
 
-    this.letters.forEach((letter, index) => {
-      if (letter.char.toLowerCase() === secretWordString[index]) {
-        letter.state = LetterState.Correct;
-      } else if (secretWordString.includes(letter.char.toLowerCase())) {
-          letter.state = LetterState.Misplaced;
-        isCorrect = false;
+  // First pass to check for correct letters
+  this.letters.forEach((letter, index) => {
+    if (letter.char.toLowerCase() === secretWordString[index]) {
+      letter.state = LetterState.Correct;
+      secretWordArray[index] = null; // Remove matched letters from further consideration
+    }
+  });
+
+  // Second pass to check for misplaced letters
+  this.letters.forEach((guessedLetter, index) => {
+    if (guessedLetter.state === LetterState.Unknown) { // Check only letters that are not marked as Correct
+      if (secretWordArray.includes(guessedLetter.char.toLowerCase())) {
+        guessedLetter.state = LetterState.Misplaced;
+        isMatch = false;
+        // Remove the first instance of this letter from secretWordArray to prevent double counting
+        secretWordArray[secretWordArray.indexOf(guessedLetter.char.toLowerCase())] = null;
       } else {
-        letter.state = LetterState.Wrong;
-        isCorrect = false;
+        guessedLetter.state = LetterState.Wrong;
+        isMatch = false;
       }
-    });
+    }
+  });
 
-    return isCorrect;
-  }
-
+  return isMatch;
+}
     // Check for misplaced letters
     this.letters.forEach((guessedLetter, i) => {
       if (guessedLetter.state === LetterState.Wrong) {
