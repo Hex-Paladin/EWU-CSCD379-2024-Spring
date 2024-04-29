@@ -71,45 +71,25 @@ export class Game {
     }
   }
 
-  public validWords(): string[] {
-    // Filter out words that do not meet the criteria based on guessed letters
-    return WordList.filter((word) => {
-      // Convert the word to lower case for comparison
-      word = word.toLowerCase();
+public validWords(): string[] {
+  console.log("Recalculating valid words...");
+  return WordList.filter((word) => {
+    word = word.toLowerCase();
 
-      // First, exclude any words that contain letters that have been guessed wrong
-      if (this.guessedLetters.some(letter => 
-        letter.state === LetterState.Wrong && word.includes(letter.char.toLowerCase()))) {
-        return false;
-      }
-  
-      // Next, check if the word matches the correct and misplaced letters from the guesses
-      return this.guesses.every((guess, guessIndex) => {
-        // Assume the word is valid until proven otherwise
-        let isWordValid = true;
+    // Words are invalidated if they have a 'Wrong' letter or if they lack a 'Correct' or 'Misplaced' letter
+    const isInvalid = this.guessedLetters.some((guessedLetter) => {
+      const letter = guessedLetter.char.toLowerCase();
+      const index = this.guessedLetters.indexOf(guessedLetter);
+      const isCorrect = guessedLetter.state === LetterState.Correct && word[index] !== letter;
+      const isMisplaced = guessedLetter.state === LetterState.Misplaced && (!word.includes(letter) || word[index] === letter);
+      const isWrong = guessedLetter.state === LetterState.Wrong && word.includes(letter);
 
-        // Go through each letter in the guess
-        guess.letters.forEach((guessedLetter, letterIndex) => {
-          const lowerCaseGuessedLetter = guessedLetter.char.toLowerCase();
-          // Check 'Correct' state letters are in the exact position
-          if (guessedLetter.state === LetterState.Correct) {
-            if (word[letterIndex] !== lowerCaseGuessedLetter) {
-              isWordValid = false;
-            }
-          }
-          // Check 'Misplaced' state letters are in the word but not in the current position
-          else if (guessedLetter.state === LetterState.Misplaced) {
-            if (!word.includes(lowerCaseGuessedLetter) || word[letterIndex] === lowerCaseGuessedLetter) {
-              isWordValid = false;
-            }
-          }
-        });
-  
-        // The word is only valid if it passed all the checks
-        return isWordValid;
-      });
+      return isCorrect || isMisplaced || isWrong;
     });
-  }
+
+    return !isInvalid;
+  });
+}
 
 
   public addGuess(word: string): void {
