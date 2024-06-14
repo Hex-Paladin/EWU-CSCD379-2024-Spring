@@ -86,7 +86,7 @@ const isMuted = ref(false);
 const backgroundMusic = ref<HTMLAudioElement | null>(null);
 
 // Import the music file using ES module import syntax
-import backgroundMusicSrc from '@/sounds/theme.mp3';
+import backgroundMusicSrc from '~/sounds/theme.mp3';
 
 function toggleDrawer() {
   drawer.value = !drawer.value;
